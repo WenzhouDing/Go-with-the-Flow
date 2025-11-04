@@ -8,10 +8,18 @@ from diffusers import CogVideoXVideoToVideoPipeline
 from diffusers import CogVideoXPipeline
 from diffusers.utils import export_to_video, load_image
 from icecream import ic
-from diffusers import AutoencoderKLCogVideoX, CogVideoXImageToVideoPipeline, CogVideoXTransformer3DModel 
+from diffusers import AutoencoderKLCogVideoX, CogVideoXImageToVideoPipeline, CogVideoXTransformer3DModel
 from transformers import T5EncoderModel
+from typing import Union
 
 import rp.git.CommonSource.noise_warp as nw
+
+# Import spatiotemporal degradation control
+from degradation_control import (
+    DegradationConfig,
+    apply_spatiotemporal_degradation,
+    DegradationIO,
+)
 
 pipe_ids = dict(
     T2V5B="THUDM/CogVideoX-5b",
@@ -37,6 +45,47 @@ B, F, C, H, W = 1, 13, 16, 60, 90  # The defaults
 num_frames=(F-1)*4+1 #https://miro.medium.com/v2/resize:fit:1400/format:webp/0*zxsAG1xks9pFIsoM
 #Possible num_frames: 1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45, 49
 assert num_frames==49
+
+# ============================================================================
+# DEGRADATION PARAMETER PARSING
+# ============================================================================
+
+def parse_degradation_parameter(
+    degradation_input: Union[float, str, DegradationConfig],
+) -> DegradationConfig:
+    """
+    Parse flexible degradation input into DegradationConfig.
+
+    Args:
+        degradation_input: Can be:
+            - float: scalar degradation (e.g., 0.5)
+            - str: number string or path to config JSON file
+            - DegradationConfig: already configured
+
+    Returns:
+        DegradationConfig object
+    """
+    if isinstance(degradation_input, DegradationConfig):
+        return degradation_input
+
+    elif isinstance(degradation_input, (float, int)):
+        # Backwards compatible scalar mode
+        return DegradationConfig(
+            mode='scalar',
+            scalar_value=float(degradation_input)
+        )
+
+    elif isinstance(degradation_input, str):
+        # Check if it's a number string or file path
+        try:
+            value = float(degradation_input)
+            return DegradationConfig(mode='scalar', scalar_value=value)
+        except ValueError:
+            # Load from JSON config file
+            return DegradationIO.load_config(degradation_input)
+
+    else:
+        raise TypeError(f"Invalid degradation_input type: {type(degradation_input)}")
 
 @rp.memoized #Torch never manages to unload it from memory anyway
 def get_pipe(model_name, device=None, low_vram=True):
@@ -212,7 +261,16 @@ def load_sample_cartridge(
         noise_downtemp_interp=noise_downtemp_interp,
     )
     downtemp_noise = downtemp_noise[None]
-    downtemp_noise = nw.mix_new_noise(downtemp_noise, degradation)
+
+    # Parse degradation parameter and apply spatiotemporal degradation
+    degradation_config = parse_degradation_parameter(degradation)
+    random_noise = torch.randn_like(downtemp_noise)
+    downtemp_noise = apply_spatiotemporal_degradation(
+        sample_noise=downtemp_noise,
+        random_noise=random_noise,
+        degradation_config=degradation_config,
+        device='cpu'  # Will be moved to GPU later in pipeline
+    )
 
     assert downtemp_noise.shape == (B, F, C, H, W), (downtemp_noise.shape,(B, F, C, H, W))
 

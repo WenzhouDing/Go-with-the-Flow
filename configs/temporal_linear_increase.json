@@ -1,0 +1,6 @@
+{
+  "mode": "temporal",
+  "interpolation_method": "bilinear",
+  "dtype": "float32",
+  "temporal_schedule_path": "configs/temporal_linear_increase.schedule.npy"
+}
