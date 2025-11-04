@@ -7,7 +7,9 @@
 
 ## Current Working Configuration
 
-### Environment: `flow`
+### ✅ ACTIVE SETUP: Two Separate Environments (November 3, 2025)
+
+#### Environment 1: `flow_diffusion` - For Video Generation
 - **Python:** 3.10
 - **PyTorch:** 2.1.0+cu118
 - **TorchVision:** 0.16.0+cu118
@@ -17,14 +19,28 @@
 - **OpenCV:** 4.11.0.86 (opencv-contrib-python)
 - **SciPy:** 1.15.3
 - **scikit-image:** 0.25.2
+- **Additional:** timm, scipy, scikit-image, addict, yapf, ipython, einops
+- **Isolation:** PYTHONNOUSERSITE=1
+- **Dummy Module:** source.stable_diffusion created
 
-### Additional Dependencies Installed
-- `timm`
-- `scipy`
-- `scikit-image`
-- `addict`
-- `yapf`
-- `ipython`
+#### Environment 2: `flow_warp` - For GUI Script
+- **Python:** 3.10
+- **PyTorch:** 2.0.1+cu118
+- **TorchVision:** 0.15.2+cu118
+- **Transformers:** 4.36.2
+- **Diffusers:** 0.30.3
+- **NumPy:** 1.26.4
+- **OpenCV:** 4.11.0.86 (opencv-contrib-python)
+- **SciPy:** 1.15.3
+- **scikit-image:** 0.25.2
+- **Additional:** timm, scipy, scikit-image, addict, yapf, ipython, einops
+- **Isolation:** PYTHONNOUSERSITE=1
+- **Dummy Module:** source.stable_diffusion created
+
+### Legacy Environment: `flow` (Deprecated)
+The original `flow` environment has been superseded by the two specialized environments above.
+- Use `flow_diffusion` for video generation
+- Use `flow_warp` for GUI operations
 
 ---
 
@@ -128,22 +144,24 @@ Files created:
 
 **Root Cause:** PyTorch 2.1+ has stricter C++ library initialization that conflicts with `rp` package's lazy loading mechanism, preventing `noise_warp` module from loading its functions.
 
-### Recommended Solution: Two Separate Environments
+### ✅ Solution Implemented: Two Separate Environments
 
-Create two isolated conda environments:
+Two isolated conda environments have been created and tested:
 
-1. **`flow_gui`** - For GUI script (PyTorch 2.0.1)
-2. **`flow_video`** - For inference script (PyTorch 2.1.0)
+1. **`flow_warp`** - For GUI script (PyTorch 2.0.1) ✅ WORKING
+2. **`flow_diffusion`** - For inference script (PyTorch 2.1.0) ✅ WORKING
 
 ---
 
 ## Usage Instructions
 
-### Current Single Environment Workflow
+### Two-Environment Setup (CURRENT SETUP - RECOMMENDED)
 
-**For Video Generation (Current Setup):**
+As of November 3, 2025, two separate isolated environments have been created:
+
+**Environment 1: flow_diffusion (PyTorch 2.1.0) - For Video Generation**
 ```bash
-conda activate flow
+conda activate flow_diffusion
 python cut_and_drag_inference.py noise_warp_output_folder \
     --prompt "A cat waving claws" \
     --output_mp4_path "output.mp4" \
@@ -151,13 +169,13 @@ python cut_and_drag_inference.py noise_warp_output_folder \
     --num_inference_steps 30
 ```
 
-**For GUI (if needed, may require PyTorch downgrade):**
+**Environment 2: flow_warp (PyTorch 2.0.1) - For GUI**
 ```bash
-conda activate flow
+conda activate flow_warp
 python cut_and_drag_gui.py
 ```
 
-### Future: Two-Environment Setup (Recommended)
+### Legacy: Two-Environment Setup Instructions (ALREADY COMPLETED)
 
 **Environment 1: flow_gui (PyTorch 2.0.1)**
 ```bash

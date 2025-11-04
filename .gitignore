@@ -25,3 +25,6 @@ code_release/.nfs000000000322527c00009703
 #<RP Default Gitignore End>
 
 *.blend*
+
+# LoRA models
+lora_models/
