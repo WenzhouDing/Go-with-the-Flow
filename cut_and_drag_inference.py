@@ -97,8 +97,10 @@ def get_pipe(model_name, device=None, low_vram=True):
         pipe=pipe.to('cpu')
         pipe.enable_sequential_cpu_offload(device=device)
 
-    # pipe.vae.enable_tiling()
-    # pipe.vae.enable_slicing()
+    # Enable VAE tiling and slicing to reduce memory usage during decoding
+    pipe.vae.enable_tiling()
+    pipe.vae.enable_slicing()
+    print("\tVAE TILING AND SLICING ENABLED")
 
     # Metadata
     pipe.lora_name = lora_name
@@ -330,6 +332,10 @@ def run_pipe(
 
     print("NOISE SHAPE",cartridge.noise.shape)
     print("IMAGE",image)
+
+    # Clear CUDA cache before inference to maximize available memory
+    import torch
+    torch.cuda.empty_cache()
 
     video = pipe(
         prompt=cartridge.prompt,
