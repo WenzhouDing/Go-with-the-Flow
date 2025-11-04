@@ -1,4 +1,9 @@
 from rp import *
+
+# Import torch/einops BEFORE git_import to prevent lazy loader conflicts
+import torch
+import einops
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.widgets import Slider
@@ -321,7 +326,9 @@ if __name__ == "__main__":
             axis=3,#THWC
         )
 
-        frames, transformed_polygons = destructure(animation_output)
+        # Replaced destructure to avoid lazy loader issues
+        frames = animation_output.frames
+        transformed_polygons = animation_output.transformed_polygons
 
         mask = get_image_alpha(frames[0]) > 0
         
@@ -374,9 +381,7 @@ if __name__ == "__main__":
             output_noises[frame]+=noise_video_layer*noise_mask
             #display_image((noise_mask * noise_video_layer)[:,:,:3])
             display_image(output_noises[frame][:,:,:3]/5+.5)
-    
-    import einops
-    import torch
+
     torch_noises=torch.tensor(output_noises)
     torch_noises=einops.rearrange(torch_noises,'F H W C -> F C H W')        
     #
