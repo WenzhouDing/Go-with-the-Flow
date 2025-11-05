@@ -1,6 +1,0 @@
-{
-  "mode": "scalar",
-  "interpolation_method": "bilinear",
-  "dtype": "float32",
-  "scalar_value": 0.1
-}

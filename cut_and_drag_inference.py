@@ -14,12 +14,8 @@ from typing import Union
 
 import rp.git.CommonSource.noise_warp as nw
 
-# Import spatiotemporal degradation control
-from degradation_control import (
-    DegradationConfig,
-    apply_spatiotemporal_degradation,
-    DegradationIO,
-)
+# Simple degradation support (scalar only)
+# For advanced spatiotemporal degradation, see archive/spatiotemporal_degradation/
 
 pipe_ids = dict(
     T2V5B="THUDM/CogVideoX-5b",
@@ -47,45 +43,36 @@ num_frames=(F-1)*4+1 #https://miro.medium.com/v2/resize:fit:1400/format:webp/0*z
 assert num_frames==49
 
 # ============================================================================
-# DEGRADATION PARAMETER PARSING
+# DEGRADATION SUPPORT
 # ============================================================================
 
-def parse_degradation_parameter(
-    degradation_input: Union[float, str, DegradationConfig],
-) -> DegradationConfig:
+def apply_degradation(warped_noise, degradation_value):
     """
-    Parse flexible degradation input into DegradationConfig.
+    Apply simple scalar degradation by blending warped noise with random noise.
 
     Args:
-        degradation_input: Can be:
-            - float: scalar degradation (e.g., 0.5)
-            - str: number string or path to config JSON file
-            - DegradationConfig: already configured
+        warped_noise: The motion-warped noise tensor
+        degradation_value: Float between 0 and 1
+            - 0.0 = full motion control (100% warped noise)
+            - 0.5 = balanced (50% warped, 50% random)
+            - 1.0 = no motion control (100% random noise)
 
     Returns:
-        DegradationConfig object
+        Blended noise tensor
+
+    Formula: output = (1 - degradation) × warped + degradation × random
     """
-    if isinstance(degradation_input, DegradationConfig):
-        return degradation_input
-
-    elif isinstance(degradation_input, (float, int)):
-        # Backwards compatible scalar mode
-        return DegradationConfig(
-            mode='scalar',
-            scalar_value=float(degradation_input)
-        )
-
-    elif isinstance(degradation_input, str):
-        # Check if it's a number string or file path
+    if not isinstance(degradation_value, (float, int)):
         try:
-            value = float(degradation_input)
-            return DegradationConfig(mode='scalar', scalar_value=value)
-        except ValueError:
-            # Load from JSON config file
-            return DegradationIO.load_config(degradation_input)
+            degradation_value = float(degradation_value)
+        except (ValueError, TypeError):
+            raise TypeError(f"degradation must be a number, got {type(degradation_value)}")
 
-    else:
-        raise TypeError(f"Invalid degradation_input type: {type(degradation_input)}")
+    if not 0 <= degradation_value <= 1:
+        raise ValueError(f"degradation must be between 0 and 1, got {degradation_value}")
+
+    random_noise = torch.randn_like(warped_noise)
+    return (1 - degradation_value) * warped_noise + degradation_value * random_noise
 
 @rp.memoized #Torch never manages to unload it from memory anyway
 def get_pipe(model_name, device=None, low_vram=True):
@@ -265,15 +252,8 @@ def load_sample_cartridge(
     )
     downtemp_noise = downtemp_noise[None]
 
-    # Parse degradation parameter and apply spatiotemporal degradation
-    degradation_config = parse_degradation_parameter(degradation)
-    random_noise = torch.randn_like(downtemp_noise)
-    downtemp_noise = apply_spatiotemporal_degradation(
-        sample_noise=downtemp_noise,
-        random_noise=random_noise,
-        degradation_config=degradation_config,
-        device='cpu'  # Will be moved to GPU later in pipeline
-    )
+    # Apply degradation (blend warped noise with random noise)
+    downtemp_noise = apply_degradation(downtemp_noise, degradation)
 
     assert downtemp_noise.shape == (B, F, C, H, W), (downtemp_noise.shape,(B, F, C, H, W))
 

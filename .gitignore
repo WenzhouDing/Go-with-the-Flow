@@ -28,3 +28,44 @@ code_release/.nfs000000000322527c00009703
 
 # LoRA models
 lora_models/
+
+# Data and output directories
+outputs/
+comparison_outputs/
+my_warped_noise/
+brown-bear/
+configs/
+
+# Generated files
+*.mp4
+*.npy
+*.pkl
+*.pt
+*.pth
+*.safetensors
+
+# Python cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.code-workspace
+
+# Logs and temporary files
+*.log
+*.tmp
+.cache/
+
+# Model weights and checkpoints (except documentation)
+checkpoints/
+weights/
+models/*.pt
+models/*.pth
+
+# Experiment and test outputs
+experiments/
+test_outputs/
+debug/

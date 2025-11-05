@@ -1,6 +1,0 @@
-{
-  "mode": "spatial",
-  "interpolation_method": "bilinear",
-  "dtype": "float32",
-  "spatial_mask_path": "configs/spatial_radial_edge.mask.npy"
-}
