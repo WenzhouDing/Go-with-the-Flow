@@ -35,14 +35,20 @@ comparison_outputs/
 my_warped_noise/
 brown-bear/
 configs/
+dynamite_results/
+dynamite_warped_noise/
+fft_filtered/
+*_warped_noise/
 
 # Generated files
 *.mp4
+*.gif
 *.npy
 *.pkl
 *.pt
 *.pth
 *.safetensors
+*.png
 
 # Python cache
 __pycache__/
