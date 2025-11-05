@@ -373,6 +373,13 @@ def run_pipe(
 ):
     # output_mp4_path = output_mp4_path or get_output_path(pipe, cartridge, subfolder, output_root)
 
+    # Auto-create output directory if it doesn't exist
+    if output_mp4_path is not None:
+        output_dir = rp.get_parent_folder(output_mp4_path)
+        if output_dir and not rp.folder_exists(output_dir):
+            rp.make_directory(output_dir)
+            print(f"Created output directory: {output_dir}")
+
     if rp.file_exists(output_mp4_path):
         raise RuntimeError("{output_mp4_path} already exists! Please choose a different output file or delete that one. This script is designed not to clobber previous results.")
     
