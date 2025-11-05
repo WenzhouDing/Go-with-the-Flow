@@ -31,9 +31,13 @@ lora_models/
 
 # Data directories (all inputs)
 data/
+!data/README.md
+!data/**/.gitkeep
 
 # Results directories (all outputs)
 results/
+!results/README.md
+!results/**/.gitkeep
 
 # Legacy folders (to be migrated)
 outputs/
