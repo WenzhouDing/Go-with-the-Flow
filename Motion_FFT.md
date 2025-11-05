@@ -361,7 +361,7 @@ class MotionClassifier:
 Create `frequency_motion_transfer.py`:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Frequency-decomposed motion transfer pipeline.
 Extracts motion from video, decomposes into frequency bands,
