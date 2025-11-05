@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 extract_flow_sequence.py
 

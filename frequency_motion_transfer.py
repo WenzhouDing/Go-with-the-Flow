@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 frequency_motion_transfer.py
 

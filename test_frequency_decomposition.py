@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 test_frequency_decomposition.py
 
