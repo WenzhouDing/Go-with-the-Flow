@@ -61,7 +61,7 @@ The original `flow` environment has been superseded by the two specialized envir
   ```bash
   # source /opt/ros/humble/setup.bash  # Commented out to prevent interference
   ```
-- Removed torch packages from system Python (`~/.local/lib/python3.10/site-packages/`)
+- Removed torch packages from system Python (`~/.local/lib/python.10/site-packages/`)
 
 ### 2. Requirements.txt Fix
 **File:** `/home/wding/Desktop/Go-with-the-Flow/requirements.txt`
@@ -116,7 +116,7 @@ torch.cuda.empty_cache()
 
 **Solution:** Created dummy module in site-packages:
 ```bash
-# Location: /home/wding/miniconda3/envs/flow/lib/python3.10/site-packages/source/
+# Location: /home/wding/miniconda3/envs/flow/lib/python.10/site-packages/source/
 ```
 
 Files created:
@@ -203,7 +203,7 @@ conda activate flow_gui
 # Create dummy source module
 python -c "
 import os, sys
-site_packages = os.path.join(sys.prefix, 'lib/python3.10/site-packages')
+site_packages = os.path.join(sys.prefix, 'lib/python.10/site-packages')
 source_path = os.path.join(site_packages, 'source')
 os.makedirs(source_path, exist_ok=True)
 with open(os.path.join(source_path, '__init__.py'), 'w') as f: f.write('')
@@ -317,7 +317,7 @@ pip install scipy scikit-image addict yapf ipython
 ### System Configuration Changes
 1. `~/.bashrc` line 119: Commented out ROS setup
 2. Conda environment variable: `PYTHONNOUSERSITE=1` set for flow environment
-3. Dummy module created: `/home/wding/miniconda3/envs/flow/lib/python3.10/site-packages/source/`
+3. Dummy module created: `/home/wding/miniconda3/envs/flow/lib/python.10/site-packages/source/`
 
 ---
 
