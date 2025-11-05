@@ -239,13 +239,16 @@ def load_sample_cartridge(
     sample_video  = sample["instance_video" ].to(dtype)
     sample_prompt = sample["instance_prompt"]
 
-    sample_gif_path = sample_path+'.mp4'
+    # Strip trailing slash from folder paths before appending extension
+    sample_path_clean = sample_path.rstrip('/').rstrip('\\')
+
+    sample_gif_path = sample_path_clean+'.mp4'
     if not rp.file_exists(sample_gif_path):
-        sample_gif_path = sample_path+'.gif' #The older scripts made this. Backwards compatibility.
+        sample_gif_path = sample_path_clean+'.gif' #The older scripts made this. Backwards compatibility.
     if not rp.file_exists(sample_gif_path):
         #Create one!
         #Clientside warped noise does not come with a nice GIF so we make one here and now!
-        sample_gif_path = sample_path+'.mp4'
+        sample_gif_path = sample_path_clean+'.mp4'
 
         rp.fansi_print("MAKING SAMPLE PREVIEW VIDEO",'light blue green','underlined')
         preview_sample_video=rp.as_numpy_images(sample_video)/2+.5
