@@ -29,12 +29,17 @@ code_release/.nfs000000000322527c00009703
 # LoRA models
 lora_models/
 
-# Data and output directories
+# Data directories (all inputs)
+data/
+
+# Results directories (all outputs)
+results/
+
+# Legacy folders (to be migrated)
 outputs/
 comparison_outputs/
 my_warped_noise/
 brown-bear/
-configs/
 dynamite_results/
 dynamite_warped_noise/
 fft_filtered/

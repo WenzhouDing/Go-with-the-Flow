@@ -2,8 +2,8 @@
 Test script: Emphasize fast hand motion vs slow body motion
 """
 import numpy as np
-from CommonSource.frequency_motion_editor import FrequencyMotionEditor
-from CommonSource.motion_classifier import MotionClassifier
+from src.core.frequency.frequency_motion_editor import FrequencyMotionEditor
+from src.core.frequency.motion_classifier import MotionClassifier
 
 print("="*60)
 print("TESTING: Fast Hand vs Slow Body Control")

@@ -13,10 +13,9 @@ rp.r._pip_import_autoyes = True
 rp.git_import('CommonSource')
 import rp.git.CommonSource.noise_warp as nw
 
-# Add local CommonSource to path
-sys.path.insert(0, str(Path(__file__).parent))
-from CommonSource.frequency_motion_editor import FrequencyMotionEditor
-from CommonSource.motion_classifier import MotionClassifier
+# Import frequency modules from new location
+from src.core.frequency.frequency_motion_editor import FrequencyMotionEditor
+from src.core.frequency.motion_classifier import MotionClassifier
 
 
 def visualize_flow(flow, title="Optical Flow", save_path=None):

@@ -21,10 +21,9 @@ from pathlib import Path
 import sys
 import argparse
 
-sys.path.insert(0, str(Path(__file__).parent))
-
-from CommonSource.frequency_motion_editor import FrequencyMotionEditor
-from CommonSource.motion_classifier import MotionClassifier
+# Import frequency modules from new location
+from src.core.frequency.frequency_motion_editor import FrequencyMotionEditor
+from src.core.frequency.motion_classifier import MotionClassifier
 
 
 def visualize_frequency_bands(flow_sequence: np.ndarray,

@@ -1,0 +1,6 @@
+{
+  "mode": "spatiotemporal",
+  "interpolation_method": "bilinear",
+  "dtype": "float32",
+  "spatiotemporal_mask_path": "configs/spatiotemporal_expanding_circle.stmask.npz"
+}
