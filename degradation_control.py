@@ -262,6 +262,9 @@ def apply_spatiotemporal_degradation(
     # Get degradation tensor (efficiently broadcasts)
     degradation_tensor = processor.prepare_degradation_tensor(device=device)
 
+    # Ensure degradation tensor matches the dtype of sample_noise (e.g., bfloat16)
+    degradation_tensor = degradation_tensor.to(dtype=sample_noise.dtype)
+
     # Apply degradation formula with broadcasting
     output = (
         sample_noise * (1 - degradation_tensor) +
