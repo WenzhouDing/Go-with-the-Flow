@@ -166,6 +166,13 @@ def main():
     video = rp.as_numpy_array(video)
     print(f"  ✓ Video shape: {video.shape}")
 
+    # Load and preprocess SAM video (CRITICAL: Use SAME resampling as video!)
+    print("\nLoading SAM2 segmentation masks...")
+    sam_video = rp.load_video(args.mask)
+    print(f"  Original SAM video: {len(sam_video)} frames")
+    sam_video = rp.resize_list(sam_video, length=49)  # SAME as video - ensures temporal alignment!
+    print(f"  ✓ Resampled SAM video to 49 frames (matches video timeline)")
+
     # Extract optical flow (WITHOUT warping noise yet)
     print("\nExtracting optical flow...")
     device = rp.select_torch_device(prefer_used=True)
@@ -187,21 +194,48 @@ def main():
 
     # Stack flows: (T, 2, H, W)
     flows_array = np.stack([rp.as_numpy_array(f) for f in flows])
+    T, C, H, W = flows_array.shape
     print(f"  ✓ Flow shape: {flows_array.shape}")
     print(f"  ✓ Original mean magnitude: {np.sqrt(flows_array[:, 0]**2 + flows_array[:, 1]**2).mean():.3f}")
 
-    # Load and prepare segmentation masks
-    T, C, H, W = flows_array.shape
-    fg_masks = load_sam2_masks(args.mask, H, W, args.mask_threshold)
+    # Process SAM masks to match flow dimensions
+    print(f"\nProcessing SAM masks...")
+    print(f"  Target: {T} masks at {H}x{W} resolution (to match flow)")
 
-    # Handle frame count mismatch
-    if len(fg_masks) != T:
-        print(f"\n  WARNING: Frame count mismatch (flow: {T}, masks: {len(fg_masks)})")
-        min_frames = min(T, len(fg_masks))
-        print(f"  Using first {min_frames} frames")
-        flows_array = flows_array[:min_frames]
-        fg_masks = fg_masks[:min_frames]
-        T = min_frames
+    fg_masks = []
+    for i, sam_frame in enumerate(sam_video[:T+1]):  # Process 49 SAM frames
+        # Convert to numpy if needed
+        sam_frame_np = rp.as_numpy_array(sam_frame)
+
+        # Convert to grayscale
+        if len(sam_frame_np.shape) == 3:
+            gray = cv2.cvtColor(sam_frame_np, cv2.COLOR_RGB2GRAY)
+        else:
+            gray = sam_frame_np
+
+        # Threshold: white pixels (>= threshold) are foreground
+        fg_mask = (gray >= args.mask_threshold).astype(np.float32)
+
+        # Resize to match flow resolution
+        fg_mask_resized = cv2.resize(fg_mask, (W, H), interpolation=cv2.INTER_LINEAR)
+
+        # Binarize after resize
+        fg_mask_binary = (fg_mask_resized > 0.5).astype(np.float32)
+
+        fg_masks.append(fg_mask_binary)
+
+    fg_masks = np.array(fg_masks)  # Shape: (49, H, W)
+
+    # Take first 48 masks to match flow count (Flow[t] is between Frame[t] and Frame[t+1])
+    fg_masks = fg_masks[:-1]  # Drop last mask, keep first 48
+
+    fg_ratio = fg_masks.mean() * 100
+    print(f"  ✓ Processed {len(fg_masks)} masks")
+    print(f"  ✓ Resolution: {H}x{W}")
+    print(f"  ✓ Foreground pixels: {fg_ratio:.1f}%")
+    print(f"  ✓ Temporal alignment: SAM and video resampled identically (88→49 frames)")
+
+    assert len(fg_masks) == T, f"Mask count {len(fg_masks)} doesn't match flow count {T}"
 
     # Apply segmentation-based scaling to flow
     print(f"\nApplying segmentation-based flow scaling...")

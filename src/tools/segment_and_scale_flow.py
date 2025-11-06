@@ -41,7 +41,7 @@ import argparse
 from pathlib import Path
 import sys
 
-def load_sam2_masks(mask_video_path, target_height, target_width, threshold=240):
+def load_sam2_masks(mask_video_path, target_height, target_width, target_frames=None, threshold=240):
     """
     Load SAM2 segmentation masks from video.
 
@@ -49,6 +49,7 @@ def load_sam2_masks(mask_video_path, target_height, target_width, threshold=240)
         mask_video_path: Path to SAM2 mask video
         target_height: Height to resize masks to (match flow)
         target_width: Width to resize masks to (match flow)
+        target_frames: Number of frames to resample to (if None, use original count)
         threshold: Brightness threshold for white detection (default: 240)
 
     Returns:
@@ -93,6 +94,41 @@ def load_sam2_masks(mask_video_path, target_height, target_width, threshold=240)
     masks = np.array(masks)  # Shape: (T, H, W)
 
     print(f"  ✓ Loaded {frame_count} mask frames")
+
+    # Resample frames if target_frames is specified
+    if target_frames is not None and target_frames != frame_count:
+        print(f"  ✓ Resampling from {frame_count} frames to {target_frames} frames...")
+        print(f"    (First and last frames will correspond)")
+
+        # Create frame indices for resampling
+        # This ensures first (0) and last (frame_count-1) frames map to first (0) and last (target_frames-1)
+        source_indices = np.linspace(0, frame_count - 1, target_frames)
+
+        # Interpolate masks at these indices
+        resampled_masks = []
+        for idx in source_indices:
+            # Get integer and fractional parts
+            idx_low = int(np.floor(idx))
+            idx_high = int(np.ceil(idx))
+            alpha = idx - idx_low
+
+            # Linear interpolation between frames
+            if idx_low == idx_high:
+                # Exact frame match
+                resampled_mask = masks[idx_low]
+            else:
+                # Blend between two frames
+                mask_low = masks[idx_low]
+                mask_high = masks[idx_high]
+                resampled_mask = (1 - alpha) * mask_low + alpha * mask_high
+                # Re-binarize after interpolation
+                resampled_mask = (resampled_mask > 0.5).astype(np.float32)
+
+            resampled_masks.append(resampled_mask)
+
+        masks = np.array(resampled_masks)
+        frame_count = target_frames
+        print(f"  ✓ Resampled to {frame_count} frames")
     print(f"  ✓ Resized from video resolution to {target_height}x{target_width}")
     print(f"  ✓ Foreground pixels: {(masks > 0.5).sum() / masks.size * 100:.1f}%")
 
@@ -287,21 +323,12 @@ def main():
     T, C, H, W = flow.shape
     assert C == 2, f"Expected flow with 2 channels, got {C}"
 
-    # Load SAM2 masks
-    fg_masks = load_sam2_masks(args.mask, H, W, threshold=args.threshold)
+    # Load SAM2 masks (will be resampled to match flow frame count)
+    print(f"\nTarget: {T} frames at {H}x{W} resolution")
+    fg_masks = load_sam2_masks(args.mask, H, W, target_frames=T, threshold=args.threshold)
 
-    # Verify frame counts match
-    if fg_masks.shape[0] != T:
-        print(f"\nWARNING: Frame count mismatch!")
-        print(f"  Flow frames: {T}")
-        print(f"  Mask frames: {fg_masks.shape[0]}")
-
-        # Use minimum frame count
-        min_frames = min(T, fg_masks.shape[0])
-        print(f"  Using first {min_frames} frames from both")
-        flow = flow[:min_frames]
-        fg_masks = fg_masks[:min_frames]
-        T = min_frames
+    # Verify frame counts match (should always match now due to resampling)
+    assert fg_masks.shape[0] == T, f"Frame count mismatch after resampling: {fg_masks.shape[0]} != {T}"
 
     # Scale flow
     scaled_flow = scale_flow_by_segmentation(flow, fg_masks, args.fg_scale, args.bg_scale)
