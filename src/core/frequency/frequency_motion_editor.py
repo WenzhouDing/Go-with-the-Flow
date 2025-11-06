@@ -82,6 +82,10 @@ class FrequencyMotionEditor:
             # Linear spacing
             band_edges = np.linspace(0, self.nyquist_freq, num_bands + 1)
 
+        # Store band edges for later use
+        self.band_edges = band_edges
+        self.band_freq_ranges = np.array([[band_edges[i], band_edges[i+1]] for i in range(num_bands)])
+
         # Extract bands
         self.freq_bands = []
         for i in range(num_bands):

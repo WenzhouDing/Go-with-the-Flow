@@ -366,6 +366,8 @@ def run_pipe(
     if rp.file_exists(output_mp4_path):
         raise RuntimeError("{output_mp4_path} already exists! Please choose a different output file or delete that one. This script is designed not to clobber previous results.")
     
+    image = None  # Initialize for T2V mode
+
     if pipe.is_i2v:
         image = cartridge.image
         if isinstance(image, str):
@@ -379,7 +381,7 @@ def run_pipe(
     #     v2v_video=rp.as_pil_images(v2v_video)
 
     print("NOISE SHAPE",cartridge.noise.shape)
-    print("IMAGE",image)
+    print("IMAGE",image if pipe.is_i2v else "None (T2V mode)")
 
     # Clear CUDA cache before inference to maximize available memory
     import torch

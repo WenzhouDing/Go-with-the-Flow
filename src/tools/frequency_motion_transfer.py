@@ -27,6 +27,9 @@ import torch
 import sys
 from pathlib import Path
 
+# Add project root to path for module imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
 # Import frequency modules from new location
 from src.core.frequency.frequency_motion_editor import FrequencyMotionEditor
 from src.core.frequency.motion_classifier import MotionClassifier
@@ -37,8 +40,8 @@ def main():
         description='Frequency-decomposed motion transfer pipeline',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument('source_video', help='Input video with motion to extract')
-    parser.add_argument('--output_dir', default='freq_motion_output',
+    parser.add_argument('source_video', nargs='?', help='Input video with motion to extract (optional if --flow_path provided)')
+    parser.add_argument('--output_dir', '--output', dest='output_dir', default='freq_motion_output',
                        help='Output directory for results')
     parser.add_argument('--num_bands', type=int, default=4,
                        help='Number of frequency bands (default: 4)')
@@ -79,7 +82,7 @@ def main():
         flow_sequence = np.load(args.flow_path)
     else:
         print("  Running flow extraction (requires flow_warp conda env)...")
-        from extract_flow_sequence import extract_full_flow_sequence
+        from src.tools.extract_flow_sequence import extract_full_flow_sequence
 
         flow_path = output_dir / 'raw_flows.npy'
         flow_sequence = extract_full_flow_sequence(
@@ -109,6 +112,24 @@ def main():
         np.save(band_path, band)
         magnitude = np.sqrt(band[:, 0]**2 + band[:, 1]**2).mean()
         print(f"  ✓ Band {i}: Saved flow with shape {band.shape}, magnitude {magnitude:.2f}")
+
+    # Save band metadata
+    import json
+    band_info = {
+        'n_bands': len(freq_bands),
+        'fps': args.fps,
+        'band_type': args.band_type,
+        'frequency_ranges_hz': editor.band_freq_ranges.tolist() if hasattr(editor, 'band_freq_ranges') else []
+    }
+    band_info_path = output_dir / 'band_info.json'
+    with open(band_info_path, 'w') as f:
+        json.dump(band_info, f, indent=2)
+    print(f"  ✓ Saved band metadata to: {band_info_path}")
+
+    # Save original flow for comparison
+    original_flow_path = output_dir / 'original_flow.npy'
+    np.save(original_flow_path, flow_sequence)
+    print(f"  ✓ Saved original flow for comparison")
 
     # ========================================================================
     # STEP 3: Analyze motion characteristics
